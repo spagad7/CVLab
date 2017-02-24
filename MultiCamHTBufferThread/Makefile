@@ -8,7 +8,7 @@
 CFLAGS += -std=c++11
 CVFLAGS = `pkg-config --cflags opencv`
 CC = g++ ${CFLAGS} -ggdb ${CVFLAGS}
-OUTPUTNAME = MultiCamHTBuffer${D}
+OUTPUTNAME = MultiCamHTBufferThread${D}
 
 OUTDIR = ../../bin
 
@@ -22,11 +22,11 @@ CV_LIB = `pkg-config --libs opencv`${D}
 ################################################################################
 # Master inc/lib/obj/dep settings
 ################################################################################
-OBJ = MultiCamHTBuffer.o
+OBJ = MultiCamHTBufferThread.o
 INC = -I../../include
 LIB += -Wl,-Bdynamic ${SPINNAKER_LIB}
 LIB += ${CV_LIB}
-LIB += -Wl,-rpath-link=../../lib 
+LIB += -lpthread -Wl,-rpath-link=../../lib 
 
 ################################################################################
 # Rules/recipes
@@ -38,7 +38,7 @@ ${OUTPUTNAME}: ${OBJ}
 
 # Intermediate objects
 %.o: %.cpp
-	${CC} ${CFLAGS} ${INC} -Wall -c -D LINUX $*.cpp 
+	${CC} ${CFLAGS} ${INC} -Wall -c -D LINUX $*.cpp
 
 # Clean up intermediate objects
 clean_obj:

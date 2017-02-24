@@ -5,6 +5,7 @@
 #include <vector>
 #include <list>
 #include <thread>
+#include <future>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -30,7 +31,7 @@ void emptyImageBuffer(CameraList camList);
 int RunMultipleCameras(CameraList camList);
 
 // Image Acquisiton
-int AcquireImages(CameraList camList);
+void AcquireImages(CameraPtr pCam, list<Mat> &imageBuffer);
 
 // Miscellaneous
 int getMilliCount();
@@ -497,7 +498,7 @@ int GrabNextImageByTrigger(INodeMap & nodeMap, CameraPtr pCam)
 //
 // This function  acquires images from all the initialized cameras
 //
-int AcquireImages(CameraPtr pCam, list<Mat> &imageBuffer)
+void AcquireImages(CameraPtr pCam, list<Mat> &imageBuffer)
 {
     int result = 0;
     int counter = 0;
@@ -514,7 +515,7 @@ int AcquireImages(CameraPtr pCam, list<Mat> &imageBuffer)
 	
 		cout << "Acquiring Images... " <<endl;
 
-        while(imageCnt < 1000)
+        while(imageCnt < 3000)
         {
             // Retrieve the next image from the trigger
             //result = result | GrabNextImageByTrigger(primaryNodeMap, primaryCam);
@@ -571,7 +572,6 @@ int AcquireImages(CameraPtr pCam, list<Mat> &imageBuffer)
 		            cout << fps << endl;
 		        }
 #endif
-
 				//cv::waitKey(1);
 
        		}
@@ -601,11 +601,11 @@ int AcquireImages(CameraPtr pCam, list<Mat> &imageBuffer)
 
     
 
-    return result;
+    //return result;
 }
 
 
-int saveImages(list<Mat> &imageBuffer)
+void saveImages(list<Mat> &imageBuffer)
 {
 	int result = 0;
 	unsigned int imgCount = 1;
@@ -642,7 +642,7 @@ int saveImages(list<Mat> &imageBuffer)
 			++imgCount;
 			//cv::waitKey(1);
 
-#if 0
+
 			// Calculate FPS
 		   	int timeElapsed = getMilliSpan(start);
 		    v_time.push_back(timeElapsed);
@@ -653,7 +653,7 @@ int saveImages(list<Mat> &imageBuffer)
 		       	double fps = 10000.0/t;
 		       	cout << fps << endl;
 		   	}
-#endif
+
 			
 		}
 		cout << "Saved Images: " << imgCount << endl;
@@ -662,7 +662,7 @@ int saveImages(list<Mat> &imageBuffer)
         cout << "Error: " << e.what() << endl;
         result = -1;
     }
-	return result;
+	//return result;
 }
 
 
@@ -774,7 +774,7 @@ int RunMultipleCameras(CameraList camList)
         for(int i=0; i<camList.GetSize(); i++)
 		{
 			pCam = camList.GetByIndex(i);			
-			result = AcquireImages(pCam, *bufferList[i]);
+			auto ret = std::async(std::launch::async, AcquireImages, pCam, std::ref(*bufferList[i]));
 			
 			if (result < 0)
             {
@@ -788,7 +788,7 @@ int RunMultipleCameras(CameraList camList)
 		// Save images from buffers
 		for(int i=0; i<camList.GetSize(); i++)
 		{			
-			result = saveImages(*bufferList[i]);
+			auto ret2 = std::async(std::launch::async, saveImages, std::ref(*bufferList[i]));
 			
 			if (result < 0)
             {
